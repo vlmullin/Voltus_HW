@@ -1,0 +1,34 @@
+# Query 3: In this query I first created a temp table to capture the total install cost
+# for each customer account (grouped by region and excluding all enterprise customers).
+# This temp table is then used to calculate the average install costs and the maximum install
+# costs in each region. The HW didn't explicitly ask for avg's to be included, but I thought
+# it would be helpful to see how far past the average these particular accounts had spent
+# on installs.
+
+query = """
+WITH TotalInstallCost AS (
+    SELECT region, account_id, SUM(install_cost) AS total_install_cost
+    FROM customer_data
+    WHERE enterprise = 0
+    GROUP BY region, account_id
+),
+MaxInstallCost AS (
+    SELECT region, MAX(total_install_cost) AS max_total_install_cost
+    FROM TotalInstallCost
+    GROUP BY region
+),
+RegionAverageCost AS (
+    SELECT region, AVG(total_install_cost) AS avg_install_cost
+    FROM TotalInstallCost
+    GROUP BY region
+)
+SELECT c.region, avg_cost.avg_install_cost as region_avg, c.total_install_cost as region_max, c.account_id
+FROM TotalInstallCost AS c
+INNER JOIN MaxInstallCost AS max_costs
+ON c.region = max_costs.region AND c.total_install_cost = max_costs.max_total_install_cost
+INNER JOIN RegionAverageCost AS avg_cost
+ON c.region = avg_cost.region;
+"""
+
+result_df_4 = pd.read_sql_query(query, conn)
+#results_df.head()

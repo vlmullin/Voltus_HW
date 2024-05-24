@@ -1,0 +1,21 @@
+# First Query: Install time by Region over the last 12 months
+
+# There is no DateDiff function in SQLlite, so I did this by capturing the Julian Day from
+# the time stamp, taking the difference in the dates and rounding up to just capture the
+# difference in days only, not hours or minutes, etc.
+
+
+query = """
+SELECT
+    region,
+    round(avg(julianday(install_date) - julianday(contract_start)), 0) AS install_time
+FROM
+    customer_data
+WHERE
+    contract_start >= date('now', '-12 months') AND
+    install_date >= contract_start
+GROUP BY
+    region;
+"""
+
+result_df = pd.read_sql_query(query, conn)
